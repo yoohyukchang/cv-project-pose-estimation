@@ -1,0 +1,8 @@
+# Python cache files
+**/__pycache__/
+
+# virtual environment folders
+**/env/
+
+# json files
+**/*.json
