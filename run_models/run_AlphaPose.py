@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import time
-
+from torch.utils.data import DataLoader, random_split
 
 def main():
     num_keypoints = 17
@@ -19,9 +19,21 @@ def main():
 
     target_transform = HeatmapGenerator(output_size=output_size, num_keypoints=num_keypoints)
 
-    # Get DataLoader for training and validation
-    train_loader = get_coco_dataloader(batch_size=16, phase="train", transform=transform, target_transform=target_transform)
-    val_loader = get_coco_dataloader(batch_size=16, phase="val", transform=transform, target_transform=target_transform)
+    # Get the full training DataLoader
+    full_train_loader = get_coco_dataloader(batch_size=16, phase="train", transform=transform, target_transform=target_transform)
+
+    # Define the split ratio and compute the sizes for train and validation subsets
+    val_split_ratio = 0.2
+    dataset_size = len(full_train_loader.dataset)
+    val_size = int(dataset_size * val_split_ratio)
+    train_size = dataset_size - val_size
+
+    # Split the dataset into training and validation subsets
+    train_subset, val_subset = random_split(full_train_loader.dataset, [train_size, val_size])
+
+    # Create DataLoaders for the train and validation subsets
+    train_loader = DataLoader(train_subset, batch_size=16, shuffle=True)
+    val_loader = DataLoader(val_subset, batch_size=16, shuffle=False)
 
     # Determine the device to use (GPU if available, else CPU)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
