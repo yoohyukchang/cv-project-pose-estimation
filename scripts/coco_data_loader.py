@@ -7,10 +7,11 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 import torchvision.transforms.functional as F
+import os
 
 # COCO API paths for train and validation datasets
-TRAIN_ANNOTATION_PATH = "scripts/annotations/person_keypoints_train2017.json"
-VAL_ANNOTATION_PATH = "scripts/annotations/person_keypoints_val2017.json"
+TRAIN_ANNOTATION_PATH = "../scripts/annotations/person_keypoints_train2017.json"
+VAL_ANNOTATION_PATH = "../scripts/annotations/person_keypoints_val2017.json"
 TRAIN_IMAGE_PATH = "http://images.cocodataset.org/train2017/"
 VAL_IMAGE_PATH = "http://images.cocodataset.org/val2017/"
 

@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 from torchvision.models import resnet50, ResNet50_Weights
 
-class PoseEstimationModel(nn.Module):
+class AlphaPoseModel(nn.Module):
     def __init__(self, num_keypoints):
-        super(PoseEstimationModel, self).__init__()
+        super(AlphaPoseModel, self).__init__()
         # Use the weights parameter instead of pretrained
         self.backbone = resnet50(weights=ResNet50_Weights.DEFAULT)
         # Remove the last fc layer and avgpool
