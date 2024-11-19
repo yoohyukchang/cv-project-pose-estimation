@@ -8,6 +8,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 import torchvision.transforms.functional as F
 import os
+import random
 
 # COCO API paths for train and validation datasets
 TRAIN_ANNOTATION_PATH = "../scripts/annotations/person_keypoints_train2017.json"
@@ -16,13 +17,16 @@ TRAIN_IMAGE_PATH = "http://images.cocodataset.org/train2017/"
 VAL_IMAGE_PATH = "http://images.cocodataset.org/val2017/"
 
 class PersonKeypointsDataset(Dataset):
-    def __init__(self, annotation_file, image_path, transform=None, target_transform=None):
+    def __init__(self, annotation_file, image_path, max_samples=1000, transform=None, target_transform=None, seed=42):
         self.coco = COCO(annotation_file)
         self.image_path = image_path
         self.transform = transform
         self.target_transform = target_transform
         self.person_ids = self.coco.getCatIds(catNms=['person'])
         self.img_ids = self.coco.getImgIds(catIds=self.person_ids)
+
+        random.seed(seed)
+        np.random.seed(seed)
         
         # Build list of (image_id, annotation) tuples
         self.samples = []
@@ -32,6 +36,11 @@ class PersonKeypointsDataset(Dataset):
             for ann in anns:
                 if 'keypoints' in ann and ann['num_keypoints'] > 0:
                     self.samples.append((img_id, ann))
+
+        # Randomly sample if we have more samples than max_samples
+        if max_samples and max_samples < len(self.samples):
+            self.samples = random.sample(self.samples, max_samples)
+            print(f"Randomly sampled {max_samples} images from {len(self.samples)} total images")
                     
     def __len__(self):
         return len(self.samples)
@@ -41,6 +50,8 @@ class PersonKeypointsDataset(Dataset):
         img_info = self.coco.loadImgs(img_id)[0]
         img_url = self.image_path + img_info['file_name']
         response = requests.get(img_url)
+        if response.status_code != 200:
+            raise RuntimeError(f"Failed to download image: {img_url}")
         img = Image.open(BytesIO(response.content)).convert("RGB")
         
         # Get bounding box
@@ -126,7 +137,7 @@ class HeatmapGenerator:
                 
         return torch.tensor(heatmaps, dtype=torch.float32)
 
-def get_coco_dataloader(batch_size=32, phase="train", transform=None, target_transform=None):
+def get_coco_dataloader(batch_size=32, phase="train", transform=None, target_transform=None, max_samples=1000):
     """
     Returns a DataLoader for COCO dataset.
     """
@@ -139,8 +150,20 @@ def get_coco_dataloader(batch_size=32, phase="train", transform=None, target_tra
     else:
         raise ValueError("Invalid phase. Choose between 'train' and 'val'.")
     
-    dataset = PersonKeypointsDataset(annotation_file=annotation_file, image_path=image_path, transform=transform, target_transform=target_transform)
+    dataset = PersonKeypointsDataset(
+        annotation_file=annotation_file,
+        image_path=image_path,
+        max_samples=max_samples,
+        transform=transform,
+        target_transform=target_transform
+    )
     
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+    dataloader = DataLoader(
+        dataset, 
+        batch_size=batch_size, 
+        shuffle=True, 
+        num_workers=4,
+        pin_memory=True
+    )
     
     return dataloader
