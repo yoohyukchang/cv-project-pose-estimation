@@ -5,4 +5,4 @@
 
 
 
-Inside the 'data' directory, put in the two annotation files.
+Put the two annotation files inside 'data' directory.
