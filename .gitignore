@@ -4,7 +4,11 @@
 # virtual environment folders
 **/env/
 
-# json files
 **/*.json
 
+models
+**/*.pth
+
 .DS_Store
+
+.ipynb_checkpoints
